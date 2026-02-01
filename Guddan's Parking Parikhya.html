@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guddan's Parking Parikhya</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Marker Felt', cursive;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            max-width: 100%;
+            max-height: 100vh;
+        }
+
+        canvas {
+            background: #34495e;
+            display: block;
+            border: 4px solid #ff1493;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+        }
+
+        #collectionBar {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 24px;
+        }
+
+        .collectionSlot {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .collectionSlot.collected {
+            background: rgba(0, 255, 0, 0.4);
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        #chaosWarning {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0, 0 0 40px #f00;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 40px;
+            border-radius: 12px;
+            display: none;
+            animation: flash 0.5s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 20px;
+            pointer-events: all;
+        }
+
+        .controlGroup {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+        }
+
+        .controlBtn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 3px solid white;
+            border-radius: 12px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            touch-action: manipulation;
+        }
+
+        .controlBtn:active {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0.95);
+        }
+
+        #upBtn { grid-column: 2; grid-row: 1; }
+        #leftBtn { grid-column: 1; grid-row: 2; }
+        #rightBtn { grid-column: 3; grid-row: 2; }
+        #downBtn { grid-column: 2; grid-row: 3; }
+
+        #honkBtn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #ff1493;
+            font-size: 16px;
+        }
+
+        #modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            pointer-events: all;
+        }
+
+        #modal.show {
+            display: flex;
+        }
+
+        #modalContent {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255, 20, 147, 0.8);
+        }
+
+        #modalTitle {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: bounce 0.5s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        #modalMessage {
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+
+        #playAgainBtn {
+            padding: 15px 40px;
+            font-size: 24px;
+            font-family: inherit;
+            background: white;
+            color: #ff1493;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #playAgainBtn:hover {
+            background: #ffb3d9;
+            transform: scale(1.05);
+        }
+
+        #messageOverlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 10px #000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: none;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            #controls {
+                display: flex;
+            }
+            
+            #chaosWarning {
+                font-size: 32px;
+                padding: 15px 25px;
+            }
+            
+            #modalTitle {
+                font-size: 36px;
+            }
+            
+            #modalMessage {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="hud">
+            <div id="collectionBar">
+                <div class="collectionSlot" id="kittenSlot">🔒</div>
+                <div class="collectionSlot" id="treatSlot">🔒</div>
+                <div class="collectionSlot" id="keySlot">🔒</div>
+            </div>
+        </div>
+        
+        <div id="chaosWarning">Aye Bhokua!</div>
+        <div id="messageOverlay"></div>
+        
+        <div id="controls">
+            <div class="controlGroup">
+                <div class="dpad">
+                    <div class="controlBtn" id="upBtn">▲</div>
+                    <div class="controlBtn" id="leftBtn">◄</div>
+                    <div class="controlBtn" id="rightBtn">►</div>
+                    <div class="controlBtn" id="downBtn">▼</div>
+                </div>
+            </div>
+            <div class="controlGroup">
+                <div class="controlBtn" id="honkBtn">🔊<br>HONK</div>
+            </div>
+        </div>
+        
+        <div id="modal">
+            <div id="modalContent">
+                <div id="modalTitle">🎉 🎂 🎉</div>
+                <div id="modalMessage">Janmadina Ra Hardhika Shubhechha!</div>
+                <button id="playAgainBtn">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        const setCanvasSize = () => {
+            const maxWidth = Math.min(800, window.innerWidth - 20);
+            const maxHeight = Math.min(600, window.innerHeight - 200);
+            canvas.width = maxWidth;
+            canvas.height = maxHeight;
+        };
+        setCanvasSize();
+        window.addEventListener('resize', setCanvasSize);
+
+        // Game state
+        const game = {
+            car: {
+                x: 100,
+                y: 100,
+                vx: 0,
+                vy: 0,
+                angle: 0,
+                width: 30,
+                height: 20,
+                acceleration: 0.15,
+                friction: 0.95,
+                turnSpeed: 0.05,
+                maxSpeed: 3.5,
+                spinning: false,
+                spinTimer: 0
+            },
+            collected: {
+                kitten: false,
+                treat: false,
+                key: false
+            },
+            lastCollected: null,
+            chaosMode: false,
+            chaosTimer: 0,
+            nextChaosTime: 0,
+            honkWaves: [],
+            badVibes: [],
+            parkingLocked: true,
+            won: false,
+            keys: {},
+            touchControls: {
+                up: false,
+                down: false,
+                left: false,
+                right: false,
+                honk: false
+            }
+        };
+
+        // Collectibles
+        const collectibles = [
+            { emoji: '🐱', x: 150, y: 100, collected: false, type: 'kitten', name: 'Kitten' },
+            { emoji: '🍫', x: 300, y: 500, collected: false, type: 'treat', name: 'Treat' },
+            { emoji: '🔑', x: 450, y: 200, collected: false, type: 'key', name: 'Key' }
+        ];
+
+        // Obstacles
+        const obstacles = [
+            { emoji: '🐄', x: 400, y: 250, width: 40, height: 40, type: 'cow' },
+            { emoji: '👴', x: 650, y: 450, width: 40, height: 40, type: 'uncle' }
+        ];
+
+        // Potholes
+        const potholes = [
+            { x: 250, y: 200, radius: 20 },
+            { x: 500, y: 350, radius: 20 },
+            { x: 350, y: 500, radius: 20 }
+        ];
+
+        // Parking spot
+        const parkingSpot = {
+            x: 360,
+            y: 420,
+            width: 80,
+            height: 60
+        };
+
+        // Initialize chaos timer
+        game.nextChaosTime = Math.random() * 5000 + 5000;
+
+        // Audio context for honk
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const playHonk = () => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = 400;
+            oscillator.type = 'square';
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.2);
+        };
+
+        const playCrash = () => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = 100;
+            oscillator.type = 'sawtooth';
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        };
+
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            game.keys[e.key] = true;
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                honk();
+            }
+            // Prevent arrow key scrolling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            game.keys[e.key] = false;
+        });
+
+        // Touch controls
+        const setupTouchControls = () => {
+            const buttons = {
+                upBtn: 'up',
+                downBtn: 'down',
+                leftBtn: 'left',
+                rightBtn: 'right'
+            };
+
+            Object.entries(buttons).forEach(([btnId, control]) => {
+                const btn = document.getElementById(btnId);
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    game.touchControls[control] = true;
+                });
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    game.touchControls[control] = false;
+                });
+            });
+
+            document.getElementById('honkBtn').addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                honk();
+            });
+        };
+        setupTouchControls();
+
+        // Honk mechanic
+        const honk = () => {
+            playHonk();
+            showMessage('Hato!', 500);
+            
+            const wave = {
+                x: game.car.x,
+                y: game.car.y,
+                angle: game.car.angle,
+                life: 20,
+                width: 60,
+                height: 40
+            };
+            game.honkWaves.push(wave);
+        };
+
+        // Update function
+        const update = (deltaTime) => {
+            if (game.won) return;
+
+            // Handle chaos mode timer
+            if (!game.chaosMode) {
+                game.chaosTimer += deltaTime;
+                if (game.chaosTimer >= game.nextChaosTime) {
+                    startChaosMode();
+                }
+            } else {
+                game.chaosTimer += deltaTime;
+                if (game.chaosTimer >= 3000 + Math.random() * 2000) {
+                    endChaosMode();
+                }
+            }
+
+            // Spawn bad vibes (reduced spawn rate)
+            if (Math.random() < 0.003) {
+                const side = Math.floor(Math.random() * 4);
+                let x, y, vx, vy;
+                if (side === 0) { x = Math.random() * canvas.width; y = -20; vx = 0; vy = 1; }
+                else if (side === 1) { x = canvas.width + 20; y = Math.random() * canvas.height; vx = -1; vy = 0; }
+                else if (side === 2) { x = Math.random() * canvas.width; y = canvas.height + 20; vx = 0; vy = -1; }
+                else { x = -20; y = Math.random() * canvas.height; vx = 1; vy = 0; }
+                
+                game.badVibes.push({ x, y, vx, vy, emoji: '😡', size: 30 });
+            }
+
+            // Update bad vibes
+            game.badVibes = game.badVibes.filter(vibe => {
+                vibe.x += vibe.vx * 0.8;
+                vibe.y += vibe.vy * 0.8;
+                
+                // Check collision with car
+                if (checkCircleCollision(vibe.x, vibe.y, vibe.size / 2, game.car.x, game.car.y, 15)) {
+                    crash('generic');
+                    return false;
+                }
+                
+                // Remove if off screen
+                return vibe.x > -50 && vibe.x < canvas.width + 50 && vibe.y > -50 && vibe.y < canvas.height + 50;
+            });
+
+            // Update honk waves
+            game.honkWaves = game.honkWaves.filter(wave => {
+                wave.life--;
+                wave.x += Math.cos(wave.angle) * 5;
+                wave.y += Math.sin(wave.angle) * 5;
+                
+                // Check collision with bad vibes
+                game.badVibes = game.badVibes.filter(vibe => {
+                    if (checkCircleCollision(wave.x, wave.y, wave.width / 2, vibe.x, vibe.y, vibe.size / 2)) {
+                        return false;
+                    }
+                    return true;
+                });
+                
+                return wave.life > 0;
+            });
+
+            // Car controls
+            const up = game.keys['ArrowUp'] || game.keys['w'] || game.keys['W'] || game.touchControls.up;
+            const down = game.keys['ArrowDown'] || game.keys['s'] || game.keys['S'] || game.touchControls.down;
+            let left = game.keys['ArrowLeft'] || game.keys['a'] || game.keys['A'] || game.touchControls.left;
+            let right = game.keys['ArrowRight'] || game.keys['d'] || game.keys['D'] || game.touchControls.right;
+
+            // Chaos mode swaps controls
+            if (game.chaosMode) {
+                [left, right] = [right, left];
+            }
+
+            // Handle spinning from pothole
+            if (game.car.spinning) {
+                game.car.spinTimer -= deltaTime;
+                game.car.angle += 0.2;
+                if (game.car.spinTimer <= 0) {
+                    game.car.spinning = false;
+                }
+            } else {
+                // Normal controls
+                if (up) {
+                    game.car.vx += Math.cos(game.car.angle) * game.car.acceleration;
+                    game.car.vy += Math.sin(game.car.angle) * game.car.acceleration;
+                }
+                if (down) {
+                    game.car.vx -= Math.cos(game.car.angle) * game.car.acceleration * 0.7;
+                    game.car.vy -= Math.sin(game.car.angle) * game.car.acceleration * 0.7;
+                }
+                if (left) {
+                    game.car.angle -= game.car.turnSpeed;
+                }
+                if (right) {
+                    game.car.angle += game.car.turnSpeed;
+                }
+            }
+
+            // Apply friction
+            game.car.vx *= game.car.friction;
+            game.car.vy *= game.car.friction;
+
+            // Limit speed
+            const speed = Math.sqrt(game.car.vx ** 2 + game.car.vy ** 2);
+            if (speed > game.car.maxSpeed) {
+                game.car.vx = (game.car.vx / speed) * game.car.maxSpeed;
+                game.car.vy = (game.car.vy / speed) * game.car.maxSpeed;
+            }
+
+            // Update position
+            game.car.x += game.car.vx;
+            game.car.y += game.car.vy;
+
+            // Wall collision
+            if (game.car.x < 20 || game.car.x > canvas.width - 20 || game.car.y < 20 || game.car.y > canvas.height - 20) {
+                crash('wall');
+            }
+
+            // Obstacle collision
+            obstacles.forEach(obs => {
+                if (checkCollision(game.car.x, game.car.y, 15, obs.x, obs.y, obs.width / 2)) {
+                    crash(obs.type);
+                }
+            });
+
+            // Pothole collision
+            potholes.forEach(hole => {
+                if (checkCircleCollision(game.car.x, game.car.y, 15, hole.x, hole.y, hole.radius)) {
+                    if (!game.car.spinning) {
+                        game.car.spinning = true;
+                        game.car.spinTimer = 1000;
+                    }
+                }
+            });
+
+            // Collectible pickup
+            collectibles.forEach(item => {
+                if (!item.collected && checkCircleCollision(game.car.x, game.car.y, 15, item.x, item.y, 20)) {
+                    item.collected = true;
+                    game.collected[item.type] = true;
+                    game.lastCollected = item.type;
+                    updateCollectionUI();
+                    checkUnlockParking();
+                }
+            });
+
+            // Check parking
+            if (!game.parkingLocked && checkRectCollision(game.car.x, game.car.y, parkingSpot.x + parkingSpot.width / 2, parkingSpot.y + parkingSpot.height / 2, parkingSpot.width / 2, parkingSpot.height / 2)) {
+                win();
+            }
+        };
+
+        // Collision detection
+        const checkCollision = (x1, y1, r1, x2, y2, r2) => {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy) < r1 + r2;
+        };
+
+        const checkCircleCollision = (x1, y1, r1, x2, y2, r2) => {
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            return Math.sqrt(dx * dx + dy * dy) < r1 + r2;
+        };
+
+        const checkRectCollision = (x1, y1, x2, y2, w, h) => {
+            return Math.abs(x1 - x2) < w && Math.abs(y1 - y2) < h;
+        };
+
+        // Crash handler
+        const crash = (type) => {
+            playCrash();
+            
+            let message = 'Dhire chala!';
+            if (type === 'wall') message = 'Kan Karuchu?!';
+            else if (type === 'cow') message = 'Arey! Gai ku badhei dela!';
+            else if (type === 'uncle') message = 'Eita kana driving?';
+            
+            showMessage(message, 1500);
+            
+            // Drop last collected item
+            if (game.lastCollected) {
+                const item = collectibles.find(i => i.type === game.lastCollected);
+                if (item) {
+                    item.collected = false;
+                    game.collected[game.lastCollected] = false;
+                    updateCollectionUI();
+                    checkUnlockParking();
+                }
+                game.lastCollected = null;
+            }
+            
+            // Reset car
+            game.car.x = 100;
+            game.car.y = 100;
+            game.car.vx = 0;
+            game.car.vy = 0;
+            game.car.angle = 0;
+            game.car.spinning = false;
+        };
+
+        // Chaos mode
+        const startChaosMode = () => {
+            game.chaosMode = true;
+            game.chaosTimer = 0;
+            document.getElementById('chaosWarning').style.display = 'block';
+        };
+
+        const endChaosMode = () => {
+            game.chaosMode = false;
+            game.chaosTimer = 0;
+            game.nextChaosTime = Math.random() * 5000 + 5000;
+            document.getElementById('chaosWarning').style.display = 'none';
+            showMessage('Thik Achhi', 1000);
+        };
+
+        // UI updates
+        const updateCollectionUI = () => {
+            document.getElementById('kittenSlot').textContent = game.collected.kitten ? '🐱' : '🔒';
+            document.getElementById('kittenSlot').classList.toggle('collected', game.collected.kitten);
+            
+            document.getElementById('treatSlot').textContent = game.collected.treat ? '🍫' : '🔒';
+            document.getElementById('treatSlot').classList.toggle('collected', game.collected.treat);
+            
+            document.getElementById('keySlot').textContent = game.collected.key ? '🔑' : '🔒';
+            document.getElementById('keySlot').classList.toggle('collected', game.collected.key);
+        };
+
+        const checkUnlockParking = () => {
+            if (game.collected.kitten && game.collected.treat && game.collected.key) {
+                game.parkingLocked = false;
+                showMessage('Parking Unlocked! Go park at the green spot!', 3000);
+            }
+        };
+
+        const showMessage = (text, duration) => {
+            const overlay = document.getElementById('messageOverlay');
+            overlay.textContent = text;
+            overlay.style.display = 'block';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, duration);
+        };
+
+        const win = () => {
+            game.won = true;
+            document.getElementById('modal').classList.add('show');
+        };
+
+        document.getElementById('playAgainBtn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Draw function
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw road
+            ctx.fillStyle = '#555';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw road markings
+            ctx.strokeStyle = '#ff0';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([20, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw potholes
+            potholes.forEach(hole => {
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(hole.x, hole.y, hole.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw parking spot
+            ctx.fillStyle = game.parkingLocked ? '#666' : '#00ff00';
+            ctx.strokeStyle = game.parkingLocked ? '#fff' : '#00ff00';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(parkingSpot.x, parkingSpot.y, parkingSpot.width, parkingSpot.height);
+            ctx.fillRect(parkingSpot.x, parkingSpot.y, parkingSpot.width, parkingSpot.height);
+            
+            // Add glow effect when unlocked
+            if (!game.parkingLocked) {
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 20;
+                ctx.strokeRect(parkingSpot.x, parkingSpot.y, parkingSpot.width, parkingSpot.height);
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.fillText('Eithi Rakha', parkingSpot.x + parkingSpot.width / 2, parkingSpot.y + parkingSpot.height / 2 - 10);
+            
+            if (game.parkingLocked) {
+                ctx.font = '30px Arial';
+                ctx.fillText('🔒', parkingSpot.x + parkingSpot.width / 2, parkingSpot.y + parkingSpot.height / 2 + 15);
+            }
+            
+            // Draw collectibles
+            collectibles.forEach(item => {
+                if (!item.collected) {
+                    ctx.font = '32px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(item.emoji, item.x, item.y);
+                }
+            });
+            
+            // Draw obstacles
+            obstacles.forEach(obs => {
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(obs.emoji, obs.x, obs.y);
+            });
+            
+            // Draw bad vibes
+            game.badVibes.forEach(vibe => {
+                ctx.font = `${vibe.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(vibe.emoji, vibe.x, vibe.y);
+            });
+            
+            // Draw honk waves
+            game.honkWaves.forEach(wave => {
+                ctx.save();
+                ctx.translate(wave.x, wave.y);
+                ctx.rotate(wave.angle);
+                ctx.fillStyle = `rgba(255, 255, 0, ${wave.life / 20})`;
+                ctx.beginPath();
+                ctx.arc(0, 0, wave.width / 2, -Math.PI / 6, Math.PI / 6);
+                ctx.lineTo(0, 0);
+                ctx.fill();
+                ctx.restore();
+            });
+            
+            // Draw car
+            ctx.save();
+            ctx.translate(game.car.x, game.car.y);
+            ctx.rotate(game.car.angle);
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🚗', 0, 0);
+            ctx.restore();
+        };
+
+        // Game loop
+        let lastTime = 0;
+        const gameLoop = (currentTime) => {
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            update(deltaTime);
+            draw();
+            
+            requestAnimationFrame(gameLoop);
+        };
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
