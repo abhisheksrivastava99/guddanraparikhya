@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Guddan's Parking Parikhya 🚗</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- HUD -->
+        <div id="hud">
+            <div id="collection-bar">
+                <div class="item-slot" id="slot-kitten">🐱</div>
+                <div class="item-slot" id="slot-treat">🍫</div>
+                <div class="item-slot" id="slot-key">🔑</div>
+            </div>
+        </div>
+
+        <!-- Chaos Warning -->
+        <div id="chaos-warning" class="hidden">Aye Bhokua! (Controls Swapped)</div>
+
+        <!-- Message Display -->
+        <div id="message-display" class="hidden"></div>
+
+        <!-- Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Mobile Controls -->
+        <div id="mobile-controls">
+            <div id="left-controls">
+                <button id="btn-gas" class="control-btn">⬆️ GAS</button>
+                <div id="steering">
+                    <button id="btn-left" class="control-btn">⬅️</button>
+                    <button id="btn-right" class="control-btn">➡️</button>
+                </div>
+                <button id="btn-brake" class="control-btn">⬇️ BRAKE</button>
+            </div>
+            <div id="right-controls">
+                <button id="btn-honk" class="control-btn honk-btn">📢 HONK</button>
+            </div>
+        </div>
+
+        <!-- Win Screen -->
+        <div id="win-screen" class="hidden">
+            <div id="win-content">
+                <div id="confetti-container"></div>
+                <h1>🎉 Janmadina Ra Hardhika Shubhechha! 🎉</h1>
+                <p>Heartfelt Birthday Wishes, Guddan!</p>
+                <p>You parked like a pro! 🚗✨</p>
+                <button id="play-again-btn">Play Again 🔄</button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <div id="start-content">
+                <h1>🚗 Guddan's Parking Parikhya 🚗</h1>
+                <p>Guddan's Parking Exam</p>
+                <div class="instructions">
+                    <p>🎯 Collect all 3 items to unlock parking:</p>
+                    <p>🐱 Kitten | 🍫 Treat | 🔑 Key</p>
+                    <p>⚠️ Avoid obstacles and Bad Vibes 😡</p>
+                    <p>📢 Use HONK to blast Bad Vibes!</p>
+                    <p>🌀 Watch out for Chaos Mode!</p>
+                </div>
+                <div class="controls-info">
+                    <p><strong>Desktop:</strong> Arrow Keys + Space to Honk</p>
+                    <p><strong>Mobile:</strong> Use on-screen buttons</p>
+                </div>
+                <button id="start-btn">Start Game 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
