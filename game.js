@@ -177,15 +177,19 @@ let mapHeight = 600;
 // Resize handler
 function resizeCanvas() {
     const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+    const isGameActive = document.body.classList.contains('game-active');
     
     canvas.width = window.innerWidth;
     
-    if (isMobile) {
-        // Use 160px for mobile controls height (fixed)
-        const controlsHeight = 160;
+    if (isMobile && isGameActive) {
+        // Use 180px for mobile controls height (increased for more space)
+        const controlsHeight = 180;
         // Use visualViewport if available for more accurate sizing
         const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         canvas.height = viewportHeight - controlsHeight;
+    } else if (isMobile) {
+        // Before game starts, use full height minus some padding
+        canvas.height = window.innerHeight;
     } else {
         canvas.height = window.innerHeight;
     }
@@ -667,7 +671,7 @@ function draw() {
     ctx.strokeRect(parkingSpot.x, parkingSpot.y, parkingSpot.width, parkingSpot.height);
     
     // Draw parking spot indicator
-    ctx.font = '24px Arial';
+    ctx.font = '24px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -680,23 +684,25 @@ function draw() {
     }
     
     // Draw collectibles
-    ctx.font = '35px Arial';
+    ctx.font = '35px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     for (const item of collectibles) {
         if (!item.collected) {
-            ctx.fillText(item.emoji, item.x - item.size / 2, item.y + item.size / 4);
+            ctx.fillText(item.emoji, item.x, item.y);
         }
     }
     
     // Draw obstacles
     for (const obs of obstacles) {
-        ctx.font = obs.size + 'px Arial';
-        ctx.fillText(obs.emoji, obs.x - obs.size / 2, obs.y + obs.size / 4);
+        ctx.font = obs.size + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+        ctx.fillText(obs.emoji, obs.x, obs.y);
     }
     
     // Draw bad vibes
-    ctx.font = '35px Arial';
+    ctx.font = '35px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
     for (const vibe of badVibes) {
-        ctx.fillText('😡', vibe.x - 17, vibe.y + 10);
+        ctx.fillText('😡', vibe.x, vibe.y);
     }
     
     // Draw honk waves
@@ -714,7 +720,7 @@ function draw() {
     ctx.rotate(car.angle + Math.PI / 2);
     
     // Car body (emoji)
-    ctx.font = '45px Arial';
+    ctx.font = '45px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🚗', 0, 0);
@@ -850,17 +856,21 @@ function setupMobileControls() {
 document.getElementById('start-btn').addEventListener('click', () => {
     initAudio();
     document.getElementById('start-screen').classList.add('hidden');
+    document.body.classList.add('game-active');
     gameRunning = true;
     gameWon = false;
     initGame();
+    resizeCanvas(); // Resize after game starts
 });
 
 // Play again button
 document.getElementById('play-again-btn').addEventListener('click', () => {
     document.getElementById('win-screen').classList.add('hidden');
+    document.body.classList.add('game-active');
     gameRunning = true;
     gameWon = false;
     initGame();
+    resizeCanvas();
 });
 
 // Initialize

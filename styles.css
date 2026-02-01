@@ -42,11 +42,10 @@ body {
     background: #2d2d2d;
 }
 
-@media (max-width: 768px), (pointer: coarse) {
-    #gameCanvas {
-        height: calc(100vh - 160px) !important;
-        height: calc(100dvh - 160px) !important;
-    }
+/* Mobile canvas sizing - only when game is active */
+.game-active #gameCanvas {
+    height: calc(100vh - 180px) !important;
+    height: calc(100dvh - 180px) !important;
 }
 
 /* HUD */
@@ -152,16 +151,15 @@ body {
     padding: 8px 12px;
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     background: rgba(0, 0, 0, 0.95);
-    z-index: 1000;
+    z-index: 100;
     min-height: 140px;
 }
 
-@media (max-width: 768px), (pointer: coarse) {
-    #mobile-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+/* Only show controls when game is active (start screen hidden) */
+.game-active #mobile-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 #left-controls {
